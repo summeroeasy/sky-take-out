@@ -9,6 +9,24 @@
         VALUES ( #{categoryId}, #{name}, #{price}, #{description}, #{image}, #{createTime}, #{updateTime}
                , #{createUser}, #{updateUser}, #{status})
     </insert>
+    <update id="update">
+        UPDATE setmeal
+        SET category_id = #{categoryId},
+            price       = #{price},
+            status      = #{status},
+            description = #{description},
+            image       = #{image},
+            name        = #{name}
+        where id = #{id};
+    </update>
+    <delete id="deleteIds">
+        delete from setmeal
+        where id in
+            <foreach collection="ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+
+    </delete>
 
     <select id="getSetmealIdsByDishIds" resultType="java.lang.Long">
         SELECT setmeal_id
