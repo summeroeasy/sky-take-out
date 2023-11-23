@@ -39,13 +39,12 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
         //判断当前商品是否在购物车中
         List<ShoppingCart> shoppingCartList = shoppingCartMapper.list(shoppingCart);
         //如果已经存在，就更新数量，数量加1
-        if (shoppingCartList != null && shoppingCartList.size() > 0) {
+        if (shoppingCartList != null && shoppingCartList.size() == 1) {
             shoppingCart = shoppingCartList.get(0);
             shoppingCart.setNumber(shoppingCart.getNumber() + 1);
             shoppingCartMapper.updateNumberById(shoppingCart);
         } else {
             //如果不存在，插入数据，数量就是1
-
             //判断当前添加到购物车的是菜品还是套餐
             Long dishId = shoppingCartDTO.getDishId();
             if (dishId != null) {
@@ -62,12 +61,10 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
                 shoppingCart.setImage(setmeal.getImage());
                 shoppingCart.setAmount(setmeal.getPrice());
             }
+            shoppingCart.setNumber(1);
+            shoppingCart.setCreateTime(LocalDateTime.now());
+            shoppingCartMapper.insert(shoppingCart);
         }
-        shoppingCart.setNumber(1);
-        shoppingCart.setCreateTime(LocalDateTime.now());
-        shoppingCartMapper.insert(shoppingCart);
-
-
     }
 
     @Override
@@ -82,4 +79,32 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
     public void cleanShoppingCart() {
         shoppingCartMapper.deleteByUserId(BaseContext.getCurrentId());
     }
+
+    @Override
+    public void subShoppingCart(ShoppingCartDTO shoppingCartDTO) {
+        ShoppingCart shoppingCart = new ShoppingCart();
+        BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
+        shoppingCart.setUserId(BaseContext.getCurrentId());
+        List<ShoppingCart> shoppingCartList = shoppingCartMapper.list(shoppingCart);
+        //如果已经存在，就更新数量，数量减1
+        if (shoppingCartList != null && shoppingCartList.size() >0) {
+            shoppingCart = shoppingCartList.get(0);
+            Integer number = shoppingCart.getNumber();
+            if (number > 1){
+                shoppingCart.setNumber(shoppingCart.getNumber() - 1);
+                shoppingCartMapper.updateNumberById(shoppingCart);
+            }else {
+                //判断当前添加到购物车的是菜品还是套餐
+                Long dishId = shoppingCartDTO.getDishId();
+                if (dishId != null) {
+                    shoppingCartMapper.deleteByDishId(dishId);
+                } else {
+                    //添加到购物车的是套餐
+                    Long setmealId = shoppingCartDTO.getSetmealId();
+                    shoppingCartMapper.deleteBySetmealId(setmealId);
+                }
+            }
+        }
+    }
 }
+
